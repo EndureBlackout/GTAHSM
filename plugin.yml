@@ -1,0 +1,8 @@
+name: GTAHSM
+main: me.endureblackout.hsm.HSM
+version: 1.0
+description: A GTA Heat seeking missile plugin.
+author: [EndureBlackout]
+commands:
+  hsm:
+    description: Main Command

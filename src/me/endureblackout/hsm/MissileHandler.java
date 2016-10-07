@@ -8,7 +8,6 @@ import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
@@ -56,18 +55,29 @@ public class MissileHandler implements Listener {
 					}
 				}
 
-				Vector vec = closestP.getLocation().subtract(p.getLocation()).toVector();
 				Vector loc = p.getTargetBlock((Set<Material>) null, 1).getType() == Material.AIR ? p.getLocation().getDirection().multiply(2.0) : p.getLocation().getDirection();
 
-				Arrow missile = p.getWorld().spawnArrow(p.getEyeLocation().add(loc), p.getLocation().getDirection().multiply(2.0).normalize(), (float) 3, (float) 0);
-				Location arrowLoc = missile.getLocation();
+
 
 				if (!reload.contains(p.getUniqueId())) {
-					missile.setVelocity(vec.normalize());
-					reload.add(p.getUniqueId());
+					final Arrow missile = p.getWorld().spawnArrow(p.getEyeLocation().add(loc), p.getEyeLocation().getDirection().multiply(2.0).normalize(), (float) 3, (float) 0);
+					final Player finalTarget = closestP;
 					missile.setGravity(false);
+					ParticleEffect.CLOUD.display(0, 0, 0, 2, 80, missile.getLocation(), 1.0);
 
-					ParticleEffect.CLOUD.display(0, 0, 0, 2, 80, arrowLoc, 2.0);
+					new BukkitRunnable() {
+
+						public void run() {
+							if (!missile.isDead()) {
+								Vector vec = (finalTarget.getEyeLocation().toVector()).subtract(missile.getLocation().toVector());
+								missile.setVelocity(vec.normalize());
+
+								ParticleEffect.CLOUD.display(0, 0, 0, 2, 80, missile.getLocation().clone(), 1.0);
+							}
+						}
+					}.runTaskTimer(this.core, 1 * 20, 1 * 20);
+
+					reload.add(p.getUniqueId());
 
 					new BukkitRunnable() {
 

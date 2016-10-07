@@ -71,7 +71,7 @@ public class MissileHandler implements Listener {
 								Vector vec = (finalTarget.getEyeLocation().toVector()).subtract(missile.getLocation().toVector());
 								missile.setVelocity(vec.normalize());
 
-								ParticleEffect.CLOUD.display(0, 0, 0, 2, 80, missile.getLocation(), 1.0);
+								ParticleEffect.CLOUD.display(0, 0, 0, 2, 80, missile.getLocation(), p);
 							} else {
 								cancel();
 							}

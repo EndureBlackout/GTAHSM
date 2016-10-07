@@ -63,7 +63,6 @@ public class MissileHandler implements Listener {
 					final Arrow missile = p.getWorld().spawnArrow(p.getEyeLocation().add(loc), p.getEyeLocation().getDirection().multiply(2.0).normalize(), (float) 3, (float) 0);
 					final Player finalTarget = closestP;
 					missile.setGravity(false);
-					ParticleEffect.CLOUD.display(0, 0, 0, 2, 80, missile.getLocation(), 1.0);
 
 					new BukkitRunnable() {
 
@@ -73,9 +72,13 @@ public class MissileHandler implements Listener {
 								missile.setVelocity(vec.normalize());
 
 								ParticleEffect.CLOUD.display(0, 0, 0, 2, 80, missile.getLocation().clone(), 1.0);
+							} else {
+								cancel();
 							}
 						}
-					}.runTaskTimer(this.core, 1 * 20, 1 * 20);
+					}.runTaskTimer(this.core, 20, 5);
+					
+					
 
 					reload.add(p.getUniqueId());
 

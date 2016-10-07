@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import org.bukkit.GameMode;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -48,6 +50,9 @@ public class MissileHandler implements Listener {
             return;
         }
 
+        // They have a missile in their hand, so let's stop 'em from using it
+        e.setCancelled(true);
+
         if (reload.contains(p.getUniqueId())) {
             p.sendMessage(Msg.get("Reloading message"));
             e.setCancelled(true);
@@ -75,29 +80,42 @@ public class MissileHandler implements Listener {
 
         if (closestP == null) {
             p.sendMessage(Msg.get("No target message"));
-            e.setCancelled(true);
             return;
         }
 
+        // All checks passed, it's time to fire
+        if (p.getGameMode() != GameMode.CREATIVE) {
+            // If they're in a non-creative gamemode, actually consume the
+            // firework
+            consume(firework);
+            p.getInventory().setItemInMainHand(firework);
+        }
+
+        // This ugly one-liner is to prevent both hitting yourself and shooting
+        // through walls
         Vector loc = p.getTargetBlock((Set<Material>) null, 1).getType() == Material.AIR ? p.getLocation().getDirection().multiply(2.0) : p.getLocation().getDirection();
 
         final Arrow missile = p.getWorld().spawnArrow(p.getEyeLocation().add(loc), p.getEyeLocation().getDirection().multiply(2.0).normalize(), (float) 3, (float) 0);
         final Player finalTarget = closestP;
+
         missile.setGravity(false);
 
         new BukkitRunnable() {
             public void run() {
-                if (!missile.isDead()) {
-                    if (missile.isOnGround()) {
-                        missile.setTicksLived(Integer.MAX_VALUE);
-                        return;
-                    }
-                    Vector vec = (finalTarget.getEyeLocation().toVector()).subtract(missile.getLocation().toVector());
-                    missile.setVelocity(vec.normalize());
-                    ParticleEffect.CLOUD.display(0, 0, 0, 0.1f, 80, missile.getLocation(), 64.0f);
-                } else {
-                    cancel();
+                if (missile.isOnGround()) {
+                    missile.remove();
                 }
+
+                if (missile.isDead()) {
+                    ParticleEffect.SMOKE_LARGE.display(0, 0, 0, 0.1f, 30, missile.getLocation(), 64.0f);
+                    missile.getWorld().playSound(missile.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 1.0f);
+                    cancel();
+                    return;
+                }
+
+                Vector vec = (finalTarget.getEyeLocation().toVector()).subtract(missile.getLocation().toVector());
+                missile.setVelocity(vec.normalize());
+                ParticleEffect.CLOUD.display(0, 0, 0, 0.1f, 50, missile.getLocation(), 64.0f);
             }
         }.runTaskTimer(core, 7, 5);
 
@@ -110,6 +128,16 @@ public class MissileHandler implements Listener {
             }
         }.runTaskLater(core, core.getConfig().getInt("Reload time") * 20);
 
+    }
+
+    private void consume(ItemStack is) {
+        if (is == null) {
+            return;
+        }
+        is.setAmount(is.getAmount() - 1);
+        if (is.getAmount() < 1) {
+            is.setType(Material.AIR);
+        }
     }
 
 }
